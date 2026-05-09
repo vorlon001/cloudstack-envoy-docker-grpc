@@ -83,14 +83,44 @@ curl  -H "Host: api.example.com" "http://localhost:18110/v1/messages/bob"
 
 # HTTPS Proxy
 
-curl -k -H "Host: api.example.com" -X POST https://localhost:18111/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello!"}'
+curl -k -H "Host: api.example.com" -X POST https://localhost:18111/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello!88888"}'
 curl -k -H "Host: api.example.com" -X GET https://localhost:18111/v1/messages/bob -H "Content-Type: application/json"
 
-curl -k -H "Host: apis.example.com" -X POST https://localhost:18111/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello!"}'
+curl -k -H "Host: apis.example.com" -X POST https://localhost:18111/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello!4444"}'
 curl -k -H "Host: apis.example.com" -X GET https://localhost:18111/v1/messages/bob -H "Content-Type: application/json"
 
 
+# OpenAPI Gateway
+curl -H "Host: apis2.example.com" -X POST http://localhost:18110/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello555!"}'
+curl  -H "Host: apis2.example.com" -X GET http://localhost:18110/v1/messages/bob -H "Content-Type: application/json"
+
+# TEST openapi-http
+curl -H "Host: apis3.example.com" -X POST http://localhost:18110/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!666"}'
+curl -H "Host: apis3.example.com" "http://localhost:18110/v1/messages/bob"
+
+# OpenAPI Gateway
+curl -k -H "Host: apis2.example.com" -X POST https://localhost:18111/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello555!"}'
+curl -k -H "Host: apis2.example.com" -X GET https://localhost:18111/v1/messages/bob -H "Content-Type: application/json"
+
+
+# TEST openapi-http
+curl -k -H "Host: apis3.example.com" -X POST https://localhost:18111/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!666"}'
+curl -k -H "Host: apis3.example.com" "https://localhost:18111/v1/messages/bob"
+
+
+# test in grpc server
+grpcurl -plaintext -import-path third_party -import-path proto -proto proto/chat.proto -d '{"username": "bob"}' localhost:18109 chat.ChatService/GetMessage
+
+grpcurl -insecure \
+  -cert certs/client.crt\
+  -key certs/client.key\
+  -proto chat.proto\
+  -import-path ./proto -import-path ./third_party \
+  -d '{"username": "bob"}' \
+  localhost:18090 chat.ChatService/GetMessage
+
 echo | openssl s_client -connect 127.0.0.1:18111 -servername api.example.com 2>/dev/null | openssl x509 -noout -text
+
 ```
 
 **1. Установите grpcurl (если нет):**

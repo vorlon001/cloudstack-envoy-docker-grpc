@@ -56,25 +56,6 @@ static_resources:
                   prefix: "/"
                 route:
                   cluster: backend_service_http
-
-            - name: backend_openapi_http
-              domains: ["apis2.example.com"]
-              routes:
-              # Default route
-              - match:
-                  prefix: "/"
-                route:
-                  cluster: backend_openapi_http
-            - name: backend_openapi_https
-              domains: ["apis3.example.com"]
-              routes:
-              # Default route
-              - match:
-                  prefix: "/"
-                route:
-                  cluster: backend_openapi_https
-
-
           http_filters:
           - name: envoy.filters.http.router
             typed_config:
@@ -157,22 +138,6 @@ static_resources:
                   prefix: "/"
                 route:
                   cluster: backend_service_https
-            - name: backend_openapi_http
-              domains: ["apis2.example.com"]
-              routes:
-              # Default route
-              - match:
-                  prefix: "/"
-                route:
-                  cluster: backend_openapi_http
-            - name: backend_openapi_https
-              domains: ["apis3.example.com"]
-              routes:
-              # Default route
-              - match:
-                  prefix: "/"
-                route:
-                  cluster: backend_openapi_https
           http_filters:
           - name: envoy.filters.http.router
             typed_config:
@@ -218,47 +183,6 @@ static_resources:
           validation_context:
             trusted_ca:
               filename: "/etc/envoy/ca.crt"
-
-  # HTTP backend openapi_http
-  - name: backend_openapi_http
-    connect_timeout: 5s
-    type: STRICT_DNS
-    lb_policy: ROUND_ROBIN
-    load_assignment:
-      cluster_name: backend_service
-      endpoints:
-      - lb_endpoints:
-        - endpoint:
-            address:
-              socket_address:
-                address: openapi-http
-                port_value: 8081
-
-  # HTTPS backend openapi_http
-  - name: backend_openapi_https
-    connect_timeout: 5s
-    type: STRICT_DNS
-    lb_policy: ROUND_ROBIN
-    load_assignment:
-      cluster_name: backend_service_https
-      endpoints:
-      - lb_endpoints:
-        - endpoint:
-            address:
-              socket_address:
-                address: openapi-https
-                port_value: 8081
-    # TLS configuration for upstream gRPC server
-    transport_socket:
-      name: envoy.transport_sockets.tls
-      typed_config:
-        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-        common_tls_context:
-          validation_context:
-            trusted_ca:
-              filename: "/etc/envoy/ca.crt"
-
-
 
 admin:
   access_log_path: /dev/null

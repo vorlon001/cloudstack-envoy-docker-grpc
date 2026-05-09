@@ -105,6 +105,8 @@ DNS.6 = https-server
 DNS.7 = envoy
 DNS.8 = api.example.com
 DNS.9 = apis.example.com
+DNS.10 = apis2.example.com
+DNS.11 = apis3.example.com
 IP.1 = 127.0.0.1
 IP.2 = 0.0.0.0
 EOF

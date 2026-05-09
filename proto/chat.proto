@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package chat;
+
+option go_package = "./proto";
+
+// Импортируем аннотации для HTTP маршрутов
+import "google/api/annotations.proto";
+// Импортируем настройки для генерации OpenAPI
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+// Глобальные настройки для OpenAPI файла
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Chat gRPC-Gateway API";
+    version: "1.0";
+    description: "API сгенерировано из protobuf";
+  };
+  schemes: HTTP;
+  schemes: HTTPS;
+  host: "localhost:8081";
+  base_path: "";
+};
+
+message SendMessageRequest {
+  string username = 1;
+  string message = 2;
+}
+
+message SendMessageResponse {
+  bool success = 1;
+}
+
+message GetMessageRequest {
+  string username = 1;
+}
+
+message GetMessageResponse {
+  repeated string messages = 1;
+}
+
+message ApiVersionRequest {}
+
+message ApiVersionResponse {
+  string version = 1;
+}
+
+service ChatService {
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {
+    // Привязываем к POST /v1/messages
+    option (google.api.http) = {
+      post: "/v1/messages"
+      body: "*"
+    };
+  }
+  
+  rpc GetMessage(GetMessageRequest) returns (GetMessageResponse) {
+    // Привязываем к GET /v1/messages/alice
+    option (google.api.http) = {
+      get: "/v1/messages/{username}"
+    };
+  }
+  
+  rpc ApiVersion(ApiVersionRequest) returns (ApiVersionResponse) {
+    // Привязываем к GET /v1/version
+    option (google.api.http) = {
+      get: "/v1/version"
+    };
+  }
+}

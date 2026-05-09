@@ -1,0 +1,113 @@
+swagger: "2.0"
+info:
+  title: Chat gRPC-Gateway API
+  description: API сгенерировано из protobuf
+  version: "1.0"
+tags:
+  - name: ChatService
+host: localhost:8081
+schemes:
+  - http
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /v1/messages:
+    post:
+      operationId: ChatService_SendMessage
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/chatSendMessageResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/chatSendMessageRequest'
+      tags:
+        - ChatService
+  /v1/messages/{username}:
+    get:
+      operationId: ChatService_GetMessage
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/chatGetMessageResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: username
+          in: path
+          required: true
+          type: string
+      tags:
+        - ChatService
+  /v1/version:
+    get:
+      operationId: ChatService_ApiVersion
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/chatApiVersionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      tags:
+        - ChatService
+definitions:
+  chatApiVersionResponse:
+    type: object
+    properties:
+      version:
+        type: string
+  chatGetMessageResponse:
+    type: object
+    properties:
+      messages:
+        type: array
+        items:
+          type: string
+  chatSendMessageRequest:
+    type: object
+    properties:
+      username:
+        type: string
+      message:
+        type: string
+  chatSendMessageResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+  protobufAny:
+    type: object
+    properties:
+      '@type':
+        type: string
+    additionalProperties: {}
+  rpcStatus:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      details:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/protobufAny'

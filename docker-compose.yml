@@ -1,0 +1,179 @@
+networks:
+  app-network:
+    driver: bridge
+
+services:
+
+  # 1. gRPC Сервер (ядро)
+  server-http:
+    build:
+      context: .
+      args:
+        APP_NAME: server-http
+    ports:
+      - "50052:50051"
+    networks:
+      - app-network
+
+  # 2. Ручной HTTP -> gRPC прокси (из самого начала)
+  proxy-http:
+    build:
+      context: .
+      args:
+        APP_NAME: proxy-http
+    ports:
+      - "18100:8080"
+    environment:
+      - GRPC_SERVER_URL=server-http:50051
+    depends_on:
+      - server-http
+    networks:
+      - app-network
+
+  # 1. gRPC Сервер (ядро) с TLS
+  server-https:
+    build:
+      context: .
+      args:
+        APP_NAME: server-https
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./certs:/app/certs:ro
+    networks:
+      - app-network
+
+  # 2. HTTPS -> gRPC(TLS) прокси
+  proxy-https:
+    build:
+      context: .
+      args:
+        APP_NAME: proxy-https
+    ports:
+      - "18080:8080"
+    environment:
+      - GRPC_SERVER_URL=server-https:50051
+    volumes:
+      - ./certs:/app/certs:ro
+    depends_on:
+      - server-https
+    networks:
+      - app-network
+
+  # 3. OpenAPI (grpc-gateway v2) W/O TLS
+  openapi-http:
+    build:
+      context: .
+      args:
+        APP_NAME: openapi-server-http
+    ports:
+      - "18101:8081"
+    environment:
+      - GRPC_SERVER_URL=server-http:50051
+    volumes:
+      - ./certs:/app/certs:ro
+    depends_on:
+      - server-http
+    networks:
+      - app-network
+
+  # 3. OpenAPI (grpc-gateway v2) с TLS
+  openapi-https:
+    build:
+      context: .
+      args:
+        APP_NAME: openapi-server-https
+    ports:
+      - "18081:8081"
+    environment:
+      - GRPC_SERVER_URL=server-https:50051
+    volumes:
+      - ./certs:/app/certs:ro
+    depends_on:
+      - server-https
+    networks:
+      - app-network
+
+  # 4. Чистый HTTPS сервер с валидацией Proto (без gRPC под капотом)
+  https-server:
+    build:
+      context: .
+      args:
+        APP_NAME: https-server
+    ports:
+      - "18082:8082"
+    volumes:
+      - ./certs:/app/certs:ro
+    networks:
+      - app-network
+
+  # 4. Чистый HTTP сервер
+  http-server:
+    build:
+      context: .
+      args:
+        APP_NAME: http-server
+    ports:
+      - "18083:8082"
+    networks:
+      - app-network
+
+  # 5. gRPC Клиент (запустится, отправит сообщения и завершится с кодом 0)
+  client-http:
+    build:
+      context: .
+      args:
+        APP_NAME: client-http
+    environment:
+      - GRPC_SERVER_URL=server-http:50051
+    depends_on:
+      - server-http
+    networks:
+      - app-network
+
+  # 5. gRPC Клиент с TLS (запустится, отправит сообщения и завершится с кодом 0)
+  client-https:
+    build:
+      context: .
+      args:
+        APP_NAME: client-https
+    environment:
+      - GRPC_SERVER_URL=server-https:50051
+    volumes:
+      - ./certs:/app/certs:ro
+    depends_on:
+      - server-https
+    networks:
+      - app-network
+
+  # ENVOY PROXY с TLS
+  envoy:
+    image: envoyproxy/envoy:v1.37-latest
+    ports:
+      - "18090:8090"
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./envoy/proto.pb:/etc/envoy/proto.pb:ro
+      - ./certs/https.crt:/etc/envoy/https.crt:ro
+      - ./certs/https.key:/etc/envoy/https.key:ro
+      - ./certs/ca.crt:/etc/envoy/ca.crt:ro
+    depends_on:
+      - server-http
+      - server-https
+    networks:
+      - app-network
+
+  # НОВЫЙ СЕРВИС: ENVOY PROXY w/o https
+  envoy-http:
+    image: envoyproxy/envoy:v1.37-latest
+    ports:
+      - "18109:8090"
+    volumes:
+      - ./envoy/envoy-http.yaml:/etc/envoy/envoy.yaml:ro
+      - ./envoy/proto.pb:/etc/envoy/proto.pb:ro
+    depends_on:
+      - server-http
+      - server-https
+    networks:
+      - app-network
+

@@ -74,6 +74,25 @@ curl -X GET http://localhost:18083/v1/messages/charlie -H "Content-Type: applica
 curl -k -X POST https://localhost:18090/chat.ChatService/SendMessage -H "Content-Type: application/json" -d '{"username": "dave", "message": "Hello!"}'
 ```
 
+
+# TEST ENVOY LBAAS
+```
+# TEST http-server
+curl  -H "Host: api.example.com" -X POST http://localhost:18110/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!333"}'
+curl  -H "Host: api.example.com" "http://localhost:18110/v1/messages/bob"
+
+# HTTPS Proxy
+
+curl -k -H "Host: api.example.com" -X POST https://localhost:18111/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello!"}'
+curl -k -H "Host: api.example.com" -X GET https://localhost:18111/v1/messages/bob -H "Content-Type: application/json"
+
+curl -k -H "Host: apis.example.com" -X POST https://localhost:18111/v1/messages -H "Content-Type: application/json" -d '{"username": "bob", "message": "Hello!"}'
+curl -k -H "Host: apis.example.com" -X GET https://localhost:18111/v1/messages/bob -H "Content-Type: application/json"
+
+
+echo | openssl s_client -connect 127.0.0.1:18111 -servername api.example.com 2>/dev/null | openssl x509 -noout -text
+```
+
 **1. Установите grpcurl (если нет):**
 ```bash
 go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest

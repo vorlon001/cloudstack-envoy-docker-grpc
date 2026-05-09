@@ -152,7 +152,7 @@ services:
     ports:
       - "18090:8090"
     volumes:
-      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./envoy/envoy-https-grpc.yaml:/etc/envoy/envoy.yaml:ro
       - ./envoy/proto.pb:/etc/envoy/proto.pb:ro
       - ./certs/https.crt:/etc/envoy/https.crt:ro
       - ./certs/https.key:/etc/envoy/https.key:ro
@@ -169,8 +169,27 @@ services:
     ports:
       - "18109:8090"
     volumes:
-      - ./envoy/envoy-http.yaml:/etc/envoy/envoy.yaml:ro
+      - ./envoy/envoy-http-grpc.yaml:/etc/envoy/envoy.yaml:ro
       - ./envoy/proto.pb:/etc/envoy/proto.pb:ro
+    depends_on:
+      - server-http
+      - server-https
+    networks:
+      - app-network
+
+
+  # НОВЫЙ СЕРВИС: ENVOY LBAAS
+  envoy-lbaas:
+    image: envoyproxy/envoy:v1.37-latest
+    ports:
+      - "18110:8080"
+      - "18111:8443"
+    volumes:
+      - ./envoy/envoy-lbaas.yaml:/etc/envoy/envoy.yaml:ro
+      - ./envoy/proto.pb:/etc/envoy/proto.pb:ro
+      - ./certs/https.crt:/etc/envoy/https.crt:ro
+      - ./certs/https.key:/etc/envoy/https.key:ro
+      - ./certs/ca.crt:/etc/envoy/ca.crt:ro
     depends_on:
       - server-http
       - server-https

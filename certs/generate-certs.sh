@@ -88,9 +88,12 @@ OU = HTTPS
 CN = localhost
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
-extendedKeyUsage = serverAuth
-subjectAltName = @alt_names
+subjectKeyIdentifier = hash
+basicConstraints     = CA:FALSE
+keyUsage             = digitalSignature, keyEncipherment
+subjectAltName       = @alt_names
+nsComment            = "OpenSSL Generated Certificate"
+extendedKeyUsage     = serverAuth
 
 [alt_names]
 DNS.1 = localhost
@@ -98,8 +101,10 @@ DNS.2 = proxy
 DNS.3 = proxy-https
 DNS.4 = openapi
 DNS.5 = openapi-https
-DNS.6 = http-server
+DNS.6 = https-server
 DNS.7 = envoy
+DNS.8 = api.example.com
+DNS.9 = apis.example.com
 IP.1 = 127.0.0.1
 IP.2 = 0.0.0.0
 EOF

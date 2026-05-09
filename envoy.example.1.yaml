@@ -1,0 +1,236 @@
+static_resources:
+  listeners:
+  # HTTP listener for api.example.com
+  - name: listener_http
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 80
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http_plain
+          codec_type: AUTO
+          route_config:
+            name: local_route_http
+            virtual_hosts:
+            - name: backend_http
+              domains: ["api.example.com"]
+              routes:
+              # API endpoints
+              - match:
+                  prefix: "/api/v1/users"
+                route:
+                  cluster: backend_service
+                  prefix_rewrite: "/users"
+              - match:
+                  prefix: "/api/v1/products"
+                route:
+                  cluster: backend_service
+                  prefix_rewrite: "/products"
+              - match:
+                  prefix: "/api/v1/orders"
+                route:
+                  cluster: backend_service
+                  prefix_rewrite: "/orders"
+              # Health check endpoint
+              - match:
+                  path: "/health"
+                direct_response:
+                  status: 200
+                  body:
+                    inline_string: "OK"
+              # Metrics endpoint
+              - match:
+                  path: "/metrics"
+                direct_response:
+                  status: 200
+                  body:
+                    inline_string: "Metrics endpoint"
+              # Default route
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: backend_service
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  # HTTPS listener
+  - name: listener_0
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 443
+    filter_chains:
+    # Filter chain for api.example.com -> HTTP backend
+    - filter_chain_match:
+        server_names: ["api.example.com"]
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          common_tls_context:
+            tls_certificates:
+            - certificate_chain:
+                filename: /etc/envoy/certs/cert.pem
+              private_key:
+                filename: /etc/envoy/certs/key.pem
+      filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: backend
+              domains: ["api.example.com"]
+              routes:
+              # API endpoints
+              - match:
+                  prefix: "/api/v1/users"
+                route:
+                  cluster: backend_service
+                  prefix_rewrite: "/users"
+              - match:
+                  prefix: "/api/v1/products"
+                route:
+                  cluster: backend_service
+                  prefix_rewrite: "/products"
+              - match:
+                  prefix: "/api/v1/orders"
+                route:
+                  cluster: backend_service
+                  prefix_rewrite: "/orders"
+              # Health check endpoint
+              - match:
+                  path: "/health"
+                direct_response:
+                  status: 200
+                  body:
+                    inline_string: "OK"
+              # Metrics endpoint
+              - match:
+                  path: "/metrics"
+                direct_response:
+                  status: 200
+                  body:
+                    inline_string: "Metrics endpoint"
+              # Default route
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: backend_service
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+    # Filter chain for apis.example.com -> HTTPS backend
+    - filter_chain_match:
+        server_names: ["apis.example.com"]
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          common_tls_context:
+            tls_certificates:
+            - certificate_chain:
+                filename: /etc/envoy/certs/cert.pem
+              private_key:
+                filename: /etc/envoy/certs/key.pem
+      filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_https_backend
+          codec_type: AUTO
+          route_config:
+            name: local_route_https
+            virtual_hosts:
+            - name: backend_https
+              domains: ["apis.example.com"]
+              routes:
+              # API endpoints for HTTPS backend
+              - match:
+                  prefix: "/api/v2/users"
+                route:
+                  cluster: backend_service_https
+                  prefix_rewrite: "/users"
+              - match:
+                  prefix: "/api/v2/products"
+                route:
+                  cluster: backend_service_https
+                  prefix_rewrite: "/products"
+              - match:
+                  prefix: "/api/v2/orders"
+                route:
+                  cluster: backend_service_https
+                  prefix_rewrite: "/orders"
+              # Health check endpoint
+              - match:
+                  path: "/health"
+                direct_response:
+                  status: 200
+                  body:
+                    inline_string: "OK"
+              # Default route
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: backend_service_https
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+  # HTTP backend cluster
+  - name: backend_service
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: backend_service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: backend
+                port_value: 80
+
+  # HTTPS backend cluster
+  - name: backend_service_https
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: backend_service_https
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: backend-secure
+                port_value: 443
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        sni: backend-secure
+        validation_context:
+          trusted_ca:
+            filename: "/etc/envoy/ca.crt"
+
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901

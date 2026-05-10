@@ -123,6 +123,18 @@ echo | openssl s_client -connect 127.0.0.1:18111 -servername api.example.com 2>/
 
 ```
 
+# TEST ENVOY LBAAS TCP
+```
+
+curl -X POST http://localhost:18120/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!222"}'
+curl -X POST http://localhost:18120/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!222"}'
+curl -X POST http://localhost:18120/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!222"}'
+curl -X POST http://localhost:18120/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!222"}'
+curl -X POST http://localhost:18120/v1/messages      -H "Content-Type: application/json"      -d '{"username": "bob", "message": "Hello via HTTP!222"}'
+curl "http://localhost:18120/v1/messages/bob"
+```
+
+
 **1. Установите grpcurl (если нет):**
 ```bash
 go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest

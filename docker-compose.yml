@@ -77,6 +77,42 @@ services:
     networks:
       - app-network
 
+  # 3. OpenAPI (grpc-gateway v2) W/O TLS
+  openapi-http-2:
+    build:
+      context: .
+      args:
+        APP_NAME: openapi-server-http
+    ports:
+      - "18201:8081"
+    environment:
+      - GRPC_SERVER_URL=server-http:50051
+    volumes:
+      - ./certs:/app/certs:ro
+    depends_on:
+      - server-http
+    networks:
+      - app-network
+
+  # 3. OpenAPI (grpc-gateway v2) W/O TLS
+  openapi-http-3:
+    build:
+      context: .
+      args:
+        APP_NAME: openapi-server-http
+    ports:
+      - "18301:8081"
+    environment:
+      - GRPC_SERVER_URL=server-http:50051
+    volumes:
+      - ./certs:/app/certs:ro
+    depends_on:
+      - server-http
+    networks:
+      - app-network
+
+
+
   # 3. OpenAPI (grpc-gateway v2) с TLS
   openapi-https:
     build:
@@ -193,6 +229,29 @@ services:
     depends_on:
       - server-http
       - server-https
+      - openapi-http
+      - openapi-https
+      - proxy-http
+      - proxy-https
+    networks:
+      - app-network
+
+  # НОВЫЙ СЕРВИС: ENVOY LBAAS TCP
+  envoy-tcp:
+    image: envoyproxy/envoy:v1.37-latest
+    ports:
+      - "18120:15000"
+    volumes:
+      - ./envoy/envoy-tcp.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - server-http
+      - server-https
+      - openapi-http
+      - openapi-http-2
+      - openapi-http-3
+      - openapi-https
+      - proxy-http
+      - proxy-https
     networks:
       - app-network
 
